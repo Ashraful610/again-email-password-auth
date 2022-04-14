@@ -2,20 +2,31 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Form from 'react-bootstrap/Form'
 import app from './firebase.init';
-import {createUserWithEmailAndPassword, getAuth, sendEmailVerification, signInWithEmailAndPassword} from 'firebase/auth'
+import {createUserWithEmailAndPassword, FacebookAuthProvider, getAuth, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile} from 'firebase/auth'
 import { Button} from 'react-bootstrap';
 import { useState } from 'react';
 
 
 const auth = getAuth(app)
 function App() {
+  const faecbookProvider = new FacebookAuthProvider()
   const [validated, setValidated] = useState(false);
-   
   const [error,setError] = useState()
   const [email, setEmail] = useState('')
   const [password , setPassword] = useState('')
   const [register,setRegister] = useState(false)
   const [name, setName] = useState('')
+
+ const handleFacebook = () => {
+      signInWithPopup(auth,faecbookProvider)
+      .then(result => {
+        const user = result.user
+         console.log(user)
+      })
+      .catch(error => {
+        console.error(error)
+      })
+ }
 
   const handleEmail = event => {
     setEmail(event.target.value)
@@ -69,6 +80,7 @@ function App() {
         console.log(user)
         setEmail('')
         setPassword('')
+        setUserName()
         verifyEmail()
       })
       .catch(error => {
@@ -78,11 +90,29 @@ function App() {
     }
     event.preventDefault()
   }
-
+ 
+  const setUserName = () => {
+    updateProfile(auth.currentUser,{
+      displayName:name
+    })
+    .then(() => {
+      console.log('update user name')
+    })
+    .catch(error => {
+      console.log(error.message)
+    })
+  }
   const verifyEmail = () => {
     sendEmailVerification(auth.currentUser)
     .then(() => {
       console.log('send vefifycation email ')
+    })
+  }
+
+  const handlePasswordReset = () => {
+    sendPasswordResetEmail(auth,email)
+    .then(() => {
+     console.log('send email for reset password')
     })
   }
   return (
@@ -120,7 +150,9 @@ function App() {
           <Form.Group className="mb-3" controlId="formBasicCheckbox">
             <Form.Check onChange = {handleRegisterChange} type="checkbox" label="Already register ?" />
           </Form.Group>
-           <Button variant='link'>Forget password ?</Button> 
+           <Button onClick={handlePasswordReset} variant='link'>Forget password ?</Button> 
+           <span>or</span>
+              <Button onClick={handleFacebook} variant='link'> Log In with Faecbook</Button>
            <br/>
           <Button onClick={handleSubmit} variant="primary" type="submit">
           { register ? 'Log In' :' Register'}
